@@ -46,19 +46,23 @@ public class Game {
         roll(firstRoll);
 
         //when first roll was not strike or is extra roll in last round
-        if (firstRoll != 10 && round != 11) {
+        if (firstRoll != 10 && round != 10) {
             secondRoll = checkingNumberOfRoll(10 - firstRoll);
             roll(secondRoll);
         }
+
     }
 
     public void roll(int scoreRoll) {
 
-        //game over or extra roll in last round
+        //game over with extra roll
         if (round == maxRound) {
-            gameOver(scoreRoll);
+            if (scoring.get(scoring.size() - 2) + scoring.get(scoring.size() - 1) == 10) {
+                gameOver(scoreRoll);
+            }
             return;
         }
+
 
         scoring.add(scoreRoll);
 
@@ -75,8 +79,7 @@ public class Game {
                 endRound();
             }
 
-            //second roll in round
-        } else {
+        } else { //second roll in round
             endRound();
         }
     }
@@ -105,6 +108,7 @@ public class Game {
                 strikeScore = spareScoreMultiply = 0;
             }
 
+
         }
         setScore(tempScore);
     }
@@ -114,15 +118,56 @@ public class Game {
         //if strike or spare then extra roll
         if (scoring.get(scoring.size() - 2) + scoring.get(scoring.size() - 1) == 10) {
             setScore(getScore() + roll);
+            printScore();
         }
+        System.out.println("Score for each round:");
+        printGameOverScore();
+        System.out.print(getScore());
+        System.out.printf("\nGame Over your final score is: %s", getScore());
 
-        System.out.printf("Game Over your score is: %s", score);
+    }
+
+    private void printGameOverScore() {
+        int scorePrintGameOver = 0;
+        for (int i = 0; i < scoring.size(); i += 2) {
+
+            //if strike
+            if (scoring.get(i) == 10) {
+                scorePrintGameOver += scoreCheckingStrike(scoring.subList(i + 2, scoring.size()));
+                System.out.print(scorePrintGameOver + " | ");
+            } else if (scoring.get(i) + scoring.get(i + 1) == 10 && !(i + 2 == scoring.size())) {//if spare
+                scorePrintGameOver += scoring.get(i) + scoring.get(i + 1) + scoring.get(i + 2);
+                System.out.print(scorePrintGameOver + " | ");
+            } else {
+                scorePrintGameOver += scoring.get(i) + scoring.get(i + 1);
+                System.out.print(scorePrintGameOver + " | ");
+            }
+        }
+    }
+
+    private int scoreCheckingStrike(List<Integer> tempScoring) {
+
+        //if strike
+        if (tempScoring.get(0) == 10) {
+            //recurrence
+            return 10 + scoreCheckingStrike(tempScoring.subList(2, tempScoring.size()));
+        } else if (tempScoring.get(0) + tempScoring.get(1) == 10 && (2 == scoring.size())) {// if spare
+            return 10 + tempScoring.get(0) + tempScoring.get(1) + tempScoring.get(2);
+
+        } else {
+            return 10 + tempScoring.get(0) + tempScoring.get(1);
+        }
     }
 
     private void endRound() {
         scoreUpdate();
         printScore();
         round++;
+
+        //game over without extra roll
+        if (round == maxRound && scoring.get(scoring.size() - 2) + scoring.get(scoring.size() - 1) != 10) {
+            gameOver(0);
+        }
     }
 
     private void printScore() {
