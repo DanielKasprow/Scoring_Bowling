@@ -3,18 +3,82 @@ package game;
 import java.util.*;
 
 public class Game {
+
+    Scanner scan = new Scanner(System.in);
+
     List<Integer> scoring = new ArrayList<>();
 
+    private final int maxRound;
     private int round;
     private int score;
 
-    public Game() {
-        this.round = 1;
+    public Game(int maxRound) {
+        this.round = 0;
         this.score = 0;
+        this.maxRound = maxRound;
     }
 
+    //checking value is between 0 and maxValue
     private boolean checkingRoll(int maxValue, int value) {
         return value >= 0 && value <= maxValue;
+    }
+
+    private int checkingNumberOfRoll(int maxRoll) {
+
+        int scoreRoll;
+
+        do {
+            System.out.printf("Round %s, type roll 0-%s: ", round + 1, maxRoll);
+            scoreRoll = scan.nextInt();
+            if (!checkingRoll(maxRoll, scoreRoll)) {
+                System.out.println("Error");
+            }
+        } while (!checkingRoll(maxRoll, scoreRoll));
+        return scoreRoll;
+
+    }
+
+    public void roundGame() {
+        int firstRoll, secondRoll;
+
+        //first roll
+        firstRoll = checkingNumberOfRoll(10);
+        roll(firstRoll);
+
+        //when first roll was not strike or is extra roll in last round
+        if (firstRoll != 10 && round != 11) {
+            secondRoll = checkingNumberOfRoll(10 - firstRoll);
+            roll(secondRoll);
+        }
+    }
+
+    public void roll(int scoreRoll) {
+
+        //game over or extra roll in last round
+        if (round == maxRound) {
+            gameOver(scoreRoll);
+            return;
+        }
+
+        scoring.add(scoreRoll);
+
+        //first roll in round
+        if (scoring.size() % 2 == 1) {
+            scoring.add(0);
+
+            //if not strike
+            if (scoreRoll != 10) {
+                scoreUpdate();
+                printScore();
+                scoring.remove(scoring.size() - 1);
+            } else {// strike
+                endRound();
+            }
+
+            //second roll in round
+        } else {
+            endRound();
+        }
     }
 
     private void scoreUpdate() {
@@ -22,16 +86,16 @@ public class Game {
 
         for (int i = 0; i < scoring.size(); i += 2) {
 
-            //Add current roll to score
+            //Add current rolls to score
             tempScore += scoring.get(i) + scoring.get(i + 1);
 
-            //if roll was strike
+            //if roll was strike and not last round roll
             if (scoring.get(i) == 10 && !(i + 2 == scoring.size())) {
                 spareScoreMultiply++;
                 strikeScore += (scoring.get(i + 2) + scoring.get(i + 3)) * spareScoreMultiply;
-            } else if ((scoring.get(i) + scoring.get(i + 1) == 10)) {//if roll was spare
+            } else if ((scoring.get(i) + scoring.get(i + 1) == 10)) {//if roll was spare or strike in last round
                 tempScore += strikeScore;
-
+                //if not last round
                 if (i + 2 != scoring.size()) {
                     tempScore += scoring.get(i + 2);
                     strikeScore = spareScoreMultiply = 0;
@@ -45,78 +109,23 @@ public class Game {
         setScore(tempScore);
     }
 
-    public void roll() {
-        Scanner scan = new Scanner(System.in);
-
-        int firstRoll, secondRoll;
-
-        do {
-            System.out.printf("Round %s, type roll 0-10: ", round);
-
-            firstRoll = scan.nextInt();
-
-            if (!checkingRoll(10, firstRoll)) {
-                System.out.println("Error");
-            } else if (firstRoll == 10) {// if strike
-                afterRoll(firstRoll);
-                endRound(0);
-
-            } else { //when first roll was 0-9
-                do {
-                    afterRoll(firstRoll);
-                    scoreUpdate();
-                    printscore();
-                    System.out.printf("Round %s, type roll 0-%s: ", round, 10 - firstRoll);
-                    secondRoll = scan.nextInt();
-
-                } while (!checkingRoll(10 - firstRoll, secondRoll));
-                endRound(secondRoll);
-            }
-        } while (!checkingRoll(10, firstRoll)); //type beetween 0 and 10
-        scan.close();
-    }
-
-    private void endRound(int scoreRoll) {
-
-        scoring.set(scoring.size() - 1, scoreRoll);
-        scoreUpdate();
-        printscore();
-        if (round == 10) {
-            lastRoll();
-        }
-        round++;
-    }
-
-    public void lastRoll() {
-        Scanner scan = new Scanner(System.in);
+    private void gameOver(int roll) {
 
         //if strike or spare then extra roll
         if (scoring.get(scoring.size() - 2) + scoring.get(scoring.size() - 1) == 10) {
-
-            System.out.printf("Round %s, type roll 0-10: ", round);
-            int lastRoll;
-            do {
-                lastRoll = scan.nextInt();
-            } while (!checkingRoll(10, lastRoll)); //type between 0 and 10
-
-            setScore(getScore() + lastRoll);
-            printscore();
+            setScore(getScore() + roll);
         }
-        scan.close();
-        gameOver();
+
+        System.out.printf("Game Over your score is: %s", score);
     }
 
-    void gameOver() {
-        System.out.printf("game.Game Over your score is: %s", score);
+    private void endRound() {
+        scoreUpdate();
+        printScore();
+        round++;
     }
 
-
-    void afterRoll(int scoreRoll) {
-        scoring.add(scoreRoll);
-        scoring.add(0);
-    }
-
-    void printscore() {
+    private void printScore() {
         System.out.println("Score is " + getScore());
     }
 
